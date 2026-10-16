@@ -14,7 +14,7 @@ Abra `http://localhost:5395/`. O servidor oferece suporte a requisições parcia
 
 ## Publicar
 
-O código está no GitHub (`SL997/sergio-lucas-portfolio`) e a Vercel publica automaticamente a cada `git push` na branch `main`. O site é estático: não há etapa de build.
+Site: https://sergio-lm-dias.com (domínio registrado na Vercel; `www` e o endereço `.vercel.app` redirecionam para ele, ver `vercel.json`). O código está no GitHub (`SL997/sergio-lucas-portfolio`) e a Vercel publica automaticamente a cada `git push` na branch `main`. O site é estático: não há etapa de build.
 
 Apenas `index.html`, `background-scene.js` e as imagens `img/*.webp` fazem parte do site (veja `.gitignore` e `.vercelignore`); vídeos, backups e arquivos de trabalho ficam somente no computador. O Three.js é carregado do CDN jsDelivr (versão 0.160.0).
 

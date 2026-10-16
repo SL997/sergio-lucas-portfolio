@@ -7,6 +7,7 @@
 !/index.html
 !/background-scene.js
 !/serve.mjs
+!/vercel.json
 !/img
 /img/*
 !/img/*.webp
