@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
@@ -21,7 +20,8 @@ try {
   canvas.remove();
   throw e;
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.25 : 1.6));
+const PR_MAX = Math.min(devicePixelRatio, 1.25), PR_MIN = 0.6;
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
@@ -336,7 +336,7 @@ const chip = new THREE.Group(); S1.add(chip);
 const chipMats = [];
 const track = (m, o = m.opacity) => { m.transparent = true; m.userData.base = o; chipMats.push(m); return m; };
 const substrate = new THREE.Mesh(new RoundedBoxGeometry(13, 13, 1.2, 4, 0.28),
-  track(new THREE.MeshPhysicalMaterial({ color: 0x0c1530, metalness: 0.7, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.18, envMapIntensity: 0.9 })));
+  track(new THREE.MeshStandardMaterial({ color: 0x0c1530, metalness: 0.7, roughness: 0.26, envMapIntensity: 1.0 })));
 substrate.position.z = 0.6; chip.add(substrate);
 const dieMat = mat(
   `varying vec2 vUv; void main(){ vUv = uv; vec4 mv = modelViewMatrix * vec4(position,1.0); vDepth = -mv.z; gl_Position = projectionMatrix * mv; }`,
@@ -364,7 +364,7 @@ const dieMat = mat(
 const die = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), dieMat);
 die.position.z = 1.24; chip.add(die);
 const lid = new THREE.Mesh(new RoundedBoxGeometry(8.6, 8.6, 0.55, 4, 0.22),
-  track(new THREE.MeshPhysicalMaterial({ color: 0xa6c6ff, metalness: 0, roughness: 0.04, opacity: 0.16, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 2.2, depthWrite: false })));
+  track(new THREE.MeshStandardMaterial({ color: 0xa6c6ff, metalness: 0.1, roughness: 0.04, opacity: 0.16, envMapIntensity: 2.4, depthWrite: false })));
 lid.position.z = 1.55; chip.add(lid);
 { // SMD capacitors on the substrate
   const capMat = track(new THREE.MeshStandardMaterial({ color: 0xa8bad6, metalness: 1, roughness: 0.28, envMapIntensity: 1.2 }), 1);
@@ -424,8 +424,10 @@ S2.add(makeGrid({ y: -13, z0: -8, z1: -160 }));
 S2.add(makeGrid({ y: 16, z0: -20, z1: -150, strength: 0.22, cell: 6, color: 0x5b4dff }));
 
 // floating glass "code" panels — abstract token rows, no readable text
-const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x8fb4ff, metalness: 0.1, roughness: 0.08, transparent: true, opacity: 0.085,
-  clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.5, side: THREE.DoubleSide, depthWrite: false });
+// standard material (env reflections, no clearcoat lobe) drawn in a single pass: double-sided
+// transparent materials are otherwise rendered twice per frame
+const glassMat = new THREE.MeshStandardMaterial({ color: 0x8fb4ff, metalness: 0.15, roughness: 0.08, transparent: true, opacity: 0.09,
+  envMapIntensity: 1.7, side: THREE.DoubleSide, forceSinglePass: true, depthWrite: false });
 const edgeMat = new THREE.LineBasicMaterial({ color: 0x5aa8ff, transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false });
 const tokenMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
 const palette = [0x4f9dff, 0x4f9dff, 0x62e3ff, 0x9a7dff, 0x6f7fa8, 0x6f7fa8, 0xc7d6ff].map(c => new THREE.Color(c));
@@ -685,7 +687,7 @@ const coreGlowMat = mat(
      gl_FragColor = vec4(c * uFade * fogVis(), 1.0); }`, { uFade: { value: 1 } });
 ecoFade.push(coreGlowMat.uniforms.uFade);
 core.add(new THREE.Mesh(new THREE.SphereGeometry(2.1, 48, 32), coreGlowMat));
-const coreShellMat = new THREE.MeshPhysicalMaterial({ color: 0x9fc0ff, metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.14, clearcoat: 1, envMapIntensity: 2, flatShading: true, depthWrite: false });
+const coreShellMat = new THREE.MeshStandardMaterial({ color: 0x9fc0ff, metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.14, envMapIntensity: 2.2, flatShading: true, depthWrite: false });
 const coreShell = new THREE.Mesh(new THREE.IcosahedronGeometry(3.4, 1), coreShellMat); core.add(coreShell);
 const coreWireMat = new THREE.LineBasicMaterial({ color: 0x8f7bff, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false });
 const coreWire = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(3.42, 1)), coreWireMat); core.add(coreWire);
@@ -823,26 +825,44 @@ scene.add(dust);
 /* =========================================================================
    Post-processing
    ========================================================================= */
-const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: isMobile ? 0 : 4 });
+// No MSAA: the scene is soft by design (bloom, fog, veil), and multisampling is costly on integrated GPUs.
+const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 0 });
 const composer = new EffectComposer(renderer, rt);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(2, 2), isMobile ? 0.7 : 0.85, 0.55, 0.14);
+// the glow is blurred anyway: compute it at half resolution (a quarter of the pixels)
+const bloomSetSize = bloom.setSize.bind(bloom);
+bloom.setSize = (w, h) => bloomSetSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
 composer.addPass(bloom);
-composer.addPass(new OutputPass());
-// Light theme: the same scene printed as graphite ink on the page's paper tone.
-// Light emitted in the dark render becomes ink density, so both themes share one journey.
+// Final pass in one go: tone mapping + sRGB output + theme.
+// Light theme: the same scene printed as graphite ink on the page's paper tone;
+// light emitted in the dark render becomes ink density, so both themes share one journey.
 const themePass = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uLight: { value: 0 }, uPaper: { value: new THREE.Vector3(0.949, 0.941, 0.922) } },
+  uniforms: { tDiffuse: { value: null }, uLight: { value: 0 }, uPaper: { value: new THREE.Vector3(0.949, 0.941, 0.922) },
+    uExposure: { value: renderer.toneMappingExposure }, uVeilFlat: { value: 0 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uLight; uniform vec3 uPaper; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uLight; uniform vec3 uPaper; uniform float uExposure; uniform float uVeilFlat; varying vec2 vUv;
+    // the page's reading veil (formerly a full-screen CSS layer over the canvas): dense on the left where the text sits
+    float veil(float x){
+      if (uVeilFlat > 0.5) return 0.7;
+      return x < 0.38 ? mix(0.88, 0.72, x / 0.38) : x < 0.75 ? mix(0.72, 0.12, (x - 0.38) / 0.37) : mix(0.12, 0.0, (x - 0.75) / 0.25);
+    }
+    // ACES filmic tone mapping and sRGB encoding, as three.js OutputPass does (own names: three injects its own chunks)
+    vec3 acesFit(vec3 v){ vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
+    vec3 acesFilmic(vec3 c){
+      const mat3 inM = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));
+      const mat3 outM = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276), vec3(-0.07367, -0.00605, 1.07602));
+      return clamp(outM * acesFit(inM * (c * uExposure / 0.6)), 0.0, 1.0);
+    }
+    vec3 encodeSRGB(vec3 c){ return mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308)))); }
     void main(){
-      vec3 c = texture2D(tDiffuse, vUv).rgb;
-      if (uLight <= 0.001) { gl_FragColor = vec4(c, 1.0); return; }
+      vec3 c = encodeSRGB(acesFilmic(texture2D(tDiffuse, vUv).rgb));
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
       float a = clamp(1.0 - exp(-max(l - 0.03, 0.0) * 2.6), 0.0, 0.92);
       vec3 ink = vec3(0.071, 0.075, 0.086) * mix(1.6, 1.0, a);   // graphite, close to the page text (#121316)
       vec3 light = mix(uPaper, ink, a);
-      gl_FragColor = vec4(mix(c, light, uLight), 1.0);
+      c = mix(c, light, uLight);
+      gl_FragColor = vec4(mix(c, uPaper * uLight, veil(vUv.x)), 1.0);
     }`,
 });
 composer.addPass(themePass);
@@ -878,7 +898,7 @@ function computeKeys() {
     return { p, z };
   });
 }
-new ResizeObserver(() => computeKeys()).observe(document.body);
+new ResizeObserver(() => { computeKeys(); measureScroll(); readScroll(); }).observe(document.body);
 function scrollToZ(p) {
   for (let i = 0; i < keys.length - 1; i++) {
     const a = keys[i], b = keys[i + 1];
@@ -887,7 +907,9 @@ function scrollToZ(p) {
   return keys[keys.length - 1].z;
 }
 let scrollTarget = 0, scrollSmooth = 0;
-const readScroll = () => { const max = document.documentElement.scrollHeight - innerHeight; scrollTarget = max > 0 ? clamp(scrollY / max, 0, 1) : 0; };
+let maxScrollPx = 1;   // cached: reading scrollHeight on every scroll event forced a layout
+const measureScroll = () => { maxScrollPx = Math.max(0, document.documentElement.scrollHeight - innerHeight); };
+const readScroll = () => { scrollTarget = maxScrollPx > 0 ? clamp(scrollY / maxScrollPx, 0, 1) : 0; };
 addEventListener('scroll', readScroll, { passive: true });
 
 const mouse = new THREE.Vector2(), mouseS = new THREE.Vector2();
@@ -896,16 +918,17 @@ if (!isMobile) addEventListener('pointermove', e => mouse.set(e.clientX / innerW
 let lastW = 0, lastH = 0;
 function resize() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
-  if (w === lastW && Math.abs(h - lastH) < 2) { computeKeys(); return; }
+  if (w === lastW && Math.abs(h - lastH) < 2) { computeKeys(); measureScroll(); return; }
   lastW = w; lastH = h;
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
   camera.aspect = w / h;
   camera.fov = w / h < 0.8 ? 64 : 50;
   if (w > 900) camera.setViewOffset(w, h, -w * 0.13, 0, w, h); else camera.clearViewOffset();
+  themePass.uniforms.uVeilFlat.value = w > 900 ? 0 : 1;
   camera.updateProjectionMatrix();
   U.uScale.value = h * renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
-  computeKeys(); readScroll();
+  computeKeys(); measureScroll(); readScroll();
 }
 addEventListener('resize', resize);
 addEventListener('load', () => { lastW = 0; resize(); });
@@ -923,29 +946,45 @@ const isLight = () => document.documentElement.dataset.theme !== 'dark';
 let lightTarget = isLight() ? 1 : 0;
 themePass.uniforms.uLight.value = lightTarget;
 new MutationObserver(() => { lightTarget = isLight() ? 1 : 0; }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-// adaptive resolution keeps scrolling fluid on slower GPUs
-const maxPR = renderer.getPixelRatio();
-let frameAvg = 16, frames = 0;
+// Adaptive resolution keeps scrolling fluid on slower GPUs. It reacts within about a second,
+// and only judges frames rendered back to back while the scene is in motion.
+// If the page still misses frames at the lowest resolution, the 3D is drawn every other frame while
+// scrolling (half rate) so the page itself keeps a steady 60 fps; this stays on for the visit.
+let frameAvg = 16, frames = 0, halfRate = false;
 function adaptQuality(dt) {
-  frameAvg += (dt * 1000 - frameAvg) * 0.05;
-  if (++frames < 90) return;
+  frameAvg += (dt * 1000 - frameAvg) * 0.1;
+  if (++frames < 45) return;
   const pr = renderer.getPixelRatio();
   let next = pr;
-  if (frameAvg > 24 && pr > 0.75) next = Math.max(0.75, pr - 0.25);
-  else if (frameAvg < 15 && pr < maxPR) next = Math.min(maxPR, pr + 0.25);
+  if (frameAvg > 20 && pr > PR_MIN) next = Math.max(PR_MIN, pr - 0.15);
+  else if (frameAvg > 20) halfRate = true;
+  else if (frameAvg < 17.5 && pr < PR_MAX && !halfRate) next = Math.min(PR_MAX, pr + 0.1);
+  frames = 0;
   if (next !== pr) {
     renderer.setPixelRatio(next); composer.setPixelRatio(next); U.uPR.value = next;
-    lastW = 0; resize(); frames = 0;
+    lastW = 0; resize();
   }
 }
+// Full frame rate while the page moves (scroll, pointer parallax, theme fade, intro);
+// the slow ambient animation alone is drawn at ~30 fps, which halves the GPU work at rest.
+let sinceRender = 1;
+const inMotion = () => Math.abs(scrollTarget - scrollSmooth) > 2e-4 || mouseS.distanceToSquared(mouse) > 1e-6
+  || Math.abs(lightTarget - themePass.uniforms.uLight.value) > 1e-3 || time < 7;
+// Compile every shader up front without blocking the page (parallel compile where supported),
+// so the first frames and the hero animations do not stutter.
+if (renderer.compileAsync) { try { await renderer.compileAsync(scene, camera); } catch (e) { /* compiled on first render instead */ } }
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
-  adaptQuality(dt);
-  themePass.uniforms.uLight.value += (lightTarget - themePass.uniforms.uLight.value) * (1 - Math.exp(-dt * 6));
-  time += dt * (reduceMotion ? 0.3 : 1);
+  sinceRender += dt;
+  const moving = inMotion();
+  if (moving) adaptQuality(dt);                     // judged on the page's real frame interval
+  if ((!moving || halfRate) && sinceRender < 1 / 30 - 0.004) return;
+  const step = Math.min(sinceRender, 0.1); sinceRender = 0;
+  themePass.uniforms.uLight.value += (lightTarget - themePass.uniforms.uLight.value) * (1 - Math.exp(-step * 6));
+  time += step * (reduceMotion ? 0.3 : 1);
   U.uTime.value = time;
 
-  scrollSmooth += (scrollTarget - scrollSmooth) * (1 - Math.exp(-dt * (reduceMotion ? 14 : 3.2)));
+  scrollSmooth += (scrollTarget - scrollSmooth) * (1 - Math.exp(-step * (reduceMotion ? 14 : 3.2)));
   const intro = reduceMotion ? 1 : smooth(0, 1, time / 4.5);
   const zTarget = scrollToZ(scrollSmooth) + (1 - intro) * 16;
   const u = uAtZ(zTarget);
@@ -953,7 +992,7 @@ renderer.setAnimationLoop(() => {
   path.getTangent(u, tan);
   look.copy(camPos).addScaledVector(tan, 24);
 
-  mouseS.lerp(mouse, 1 - Math.exp(-dt * 2.2));
+  mouseS.lerp(mouse, 1 - Math.exp(-step * 2.2));
   const drift = reduceMotion ? 0 : 1;
   camPos.x += mouseS.x * 0.9 + Math.sin(time * 0.21) * 0.25 * drift;
   camPos.y += -mouseS.y * 0.55 + Math.cos(time * 0.17) * 0.18 * drift;
@@ -986,7 +1025,7 @@ renderer.setAnimationLoop(() => {
 
   for (const f of ecoFade) f.value = 1 - D;
   coreShellMat.opacity = 0.14 * (1 - D); coreWireMat.opacity = 0.4 * (1 - D);
-  rings.forEach(r => { r.rotation.z += r.userData.spin * dt; r.material.opacity = 0.75 * (1 - D); });
+  rings.forEach(r => { r.rotation.z += r.userData.spin * step; r.material.opacity = 0.75 * (1 - D); });
   coreShell.rotation.y = time * 0.08; coreWire.rotation.y = time * 0.08;
   dissolveMat.uniforms.uD.value = D;
   horizonMat.uniforms.uH.value = H; floor5Mat.uniforms.uH.value = H; waveMat.uniforms.uH.value = H;
@@ -995,5 +1034,5 @@ renderer.setAnimationLoop(() => {
   for (const g of groups) { const { zNear, zFar } = g.userData; g.visible = cz + 6 > zFar && cz - 190 < zNear; }
 
   composer.render();
-  if (!canvas.classList.contains('ready')) canvas.classList.add('ready');
+  if (!canvas.classList.contains('ready')) { canvas.classList.add('ready'); canvas.parentElement.classList.add('gl'); }
 });

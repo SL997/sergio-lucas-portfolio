@@ -20,8 +20,8 @@
     --veil: 242,240,235;
     --shot-bg: #e6e4df;
     --shot-shadow: 0 30px 70px rgba(40,40,50,.18);
-    --glass-a: rgba(255,255,255,.9); --glass-b: rgba(252,251,248,.78); --glass-c: rgba(246,245,241,.7);
-    --band: 246,244,239; --band-a: .86; --band-b: .6; --band-line: rgba(255,255,255,.95); --band-line2: rgba(0,0,0,.06);
+    --glass-a: rgba(255,255,255,.94); --glass-b: rgba(252,251,248,.86); --glass-c: rgba(246,245,241,.8);
+    --band: 246,244,239; --band-a: .93; --band-b: .76; --band-line: rgba(255,255,255,.95); --band-line2: rgba(0,0,0,.06);
     --card-bg: rgba(247,245,241,.8); --card-border: rgba(255,255,255,.75); --card-shadow: 0 30px 80px rgba(60,55,45,.12), inset 0 1px 0 rgba(255,255,255,.9);
     --glass-border: rgba(255,255,255,.85); --glass-fg: #121316; --glass-sub: rgba(18,19,22,.62); --glass-line: rgba(0,0,0,.1); --bar: #1a1a1a;
     --pad: clamp(20px, 5vw, 80px);
@@ -35,8 +35,8 @@
     --bg: #000; --fg: #ededee; --text: #c8c8cc; --muted: #85858b; --line: rgba(255,255,255,.14); --role: #dfe1e5;
     --veil: 0,0,0; --shot-bg: #0b0b0b; --shot-shadow: 0 30px 80px rgba(0,0,0,.7);
     --amber: #ffb766; --cyan: #86d9ff;
-    --glass-a: rgba(58,64,80,.86); --glass-b: rgba(24,28,38,.82); --glass-c: rgba(12,14,20,.8);
-    --band: 6,9,16; --band-a: .8; --band-b: .5; --band-line: rgba(255,255,255,.16); --band-line2: rgba(255,255,255,.05);
+    --glass-a: rgba(58,64,80,.9); --glass-b: rgba(24,28,38,.88); --glass-c: rgba(12,14,20,.86);
+    --band: 6,9,16; --band-a: .9; --band-b: .68; --band-line: rgba(255,255,255,.16); --band-line2: rgba(255,255,255,.05);
     --card-bg: rgba(8,10,16,.66); --card-border: rgba(255,255,255,.09); --card-shadow: 0 30px 90px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
     --glass-border: rgba(255,255,255,.28); --glass-fg: #fff; --glass-sub: rgba(255,255,255,.72); --glass-line: rgba(255,255,255,.16); --bar: #fff;
   }
@@ -54,6 +54,8 @@
   .stage { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; z-index: 0; background: var(--bg); transition: background .6s; }
   .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; }
   .stage canvas.ready { opacity: 1; }
+  /* with WebGL running, the reading veil is drawn inside the 3D final pass (one full-screen layer less to composite) */
+  .stage.gl::after { display: none; }
   .scroll-progress { position: fixed; top: 0; left: 0; height: 2px; width: 100%; z-index: 20; pointer-events: none; background: linear-gradient(90deg, var(--cyan), #a7dfff); transform: scaleX(0); transform-origin: left; }
   .tool { perspective: 1200px; }
   .background-credit { position: fixed; right: 12px; bottom: 8px; z-index: 8; max-width: calc(100vw - 24px); padding: 3px 7px; border-radius: 4px; font: 10px/1.4 Inter, sans-serif; color: var(--fg); background: rgba(var(--veil),.82); text-decoration: none; }
@@ -104,9 +106,6 @@
     padding: clamp(46px, 6vw, 92px) var(--pad) clamp(50px, 6.4vw, 98px);
     background: linear-gradient(90deg, rgba(var(--band), var(--band-a)) 0%, rgba(var(--band), var(--band-a)) 30%, rgba(var(--band), var(--band-b)) 66%, rgba(var(--band), .16) 86%, rgba(var(--band), 0) 100%);
     transition: background .6s; }
-  .block.wrap::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    -webkit-backdrop-filter: blur(16px) saturate(135%); backdrop-filter: blur(16px) saturate(135%);
-    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 64%, transparent 92%); mask-image: linear-gradient(90deg, #000 0%, #000 64%, transparent 92%); }
   .block.wrap::after { content: ""; position: absolute; inset: 0; pointer-events: none;
     background:
       linear-gradient(90deg, var(--band-line), transparent 82%) top / 100% 1px no-repeat,
@@ -232,17 +231,22 @@
   .tool .meta.in { opacity: 1; transform: none; }
   .tool .fade.in img { transform: none; }
 
-  /* scroll-scrubbed project screens: the script drives depth, band wipe, inner parallax,
-     colour focus and the glass glint from the scroll position (off with reduced motion) */
+  /* scroll-scrubbed project screens: the script drives depth, a shutter reveal, inner parallax,
+     colour focus, a glow and the glass glint from the scroll position (off with reduced motion).
+     Everything animated is transform or opacity, so the GPU composites it without repainting. */
   .tool { position: relative; }
-  .tool::before { content: ""; position: absolute; left: -7%; right: -7%; top: -5%; aspect-ratio: 16 / 10; z-index: -1; pointer-events: none;
-    opacity: var(--focus, 0); background: radial-gradient(closest-side, rgba(40,55,90,.16), rgba(40,55,90,.05) 60%, transparent); }
-  [data-theme="dark"] .tool::before { background: radial-gradient(closest-side, rgba(45,125,255,.26), rgba(95,70,255,.08) 58%, transparent); }
+  .tool-glow { position: absolute; left: -7%; right: -7%; top: -5%; aspect-ratio: 16 / 10; z-index: -1; pointer-events: none;
+    opacity: 0; will-change: opacity; background: radial-gradient(closest-side, rgba(40,55,90,.16), rgba(40,55,90,.05) 60%, transparent); }
+  [data-theme="dark"] .tool-glow { background: radial-gradient(closest-side, rgba(45,125,255,.26), rgba(95,70,255,.08) 58%, transparent); }
   .shots-scrub .tool .fade, .shots-scrub .tool .fade.in, .shots-scrub .tool:nth-of-type(even) .fade.in {
-    transition: none; animation: none; transform-origin: 50% 80%; will-change: transform, opacity, clip-path; }
-  .shots-scrub .tool .fade img, .shots-scrub .tool .fade.in img { transition: none; will-change: transform; }
-  .shots-scrub .tool .shot.in::after { animation: none; }
-  .shots-scrub .tool .shot::after { transform: translateX(var(--sweep, -130%)); opacity: var(--glint, 0); }
+    transition: none; animation: none; clip-path: none; transform-origin: 50% 80%; will-change: transform, opacity; }
+  .shots-scrub .tool .fade img, .shots-scrub .tool .fade.in img { transition: none; will-change: transform, opacity; }
+  .shots-scrub .tool .shot::after { display: none; }
+  .shot-glint { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transform: translateX(-130%); will-change: transform, opacity;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.3) 48%, rgba(255,255,255,.08) 56%, transparent 70%); }
+  /* shutter: three bands of the page colour slide away (transform only) to open the screen */
+  .shot-shutter { position: absolute; left: 0; right: 0; height: calc(100% / 3 + 1px); z-index: 3; pointer-events: none;
+    background: rgb(var(--band)); will-change: transform; }
 
   /* ---------- badge: plain PVC card on a woven lanyard ---------- */
   .badge-wrap { position: absolute; top: 0; right: clamp(24px, 4.5vw, 96px); z-index: 3; will-change: transform, opacity; }
@@ -259,7 +263,6 @@
   /* glass card */
   .badge { margin-top: 4px; width: clamp(210px, 17vw, 250px); border-radius: 16px; position: relative; overflow: hidden; color: var(--glass-fg);
     background: linear-gradient(150deg, var(--glass-a) 0%, var(--glass-b) 45%, var(--glass-c) 100%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid var(--glass-border);
     box-shadow: 0 30px 70px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.08), inset 1px 0 0 rgba(255,255,255,.12); }
   .badge::before { content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 44px; height: 7px; border-radius: 4px;
@@ -313,7 +316,6 @@
     .tool h3 { font-size: 26px; line-height: 1.15; }
     .tool .kind { letter-spacing: .06em; line-height: 1.65; }
     .tool .built { font-size: 12.5px; line-height: 1.7; }
-    .block.wrap::before { -webkit-mask-image: none; mask-image: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
     .contact { padding-top: 14vh; }
     .contact .badge-wrap { opacity: 1 !important; transform: none !important; }
   }
@@ -581,6 +583,12 @@
 (() => {
   const badge = document.getElementById('badge');
   const badgeEnd = document.getElementById('badgeEnd');
+  // write a style only when its value changes: idle frames then cost almost nothing
+  const lastStyle = new WeakMap();
+  const put = (el, prop, value) => {
+    let m = lastStyle.get(el); if (!m) lastStyle.set(el, m = {});
+    if (m[prop] !== value) { m[prop] = value; el.style[prop] = value; }
+  };
 
   // scroll progress, eased; the 3D background (background-scene.js) follows the same scroll
   let current = 0, maxScroll = 1;
@@ -652,8 +660,8 @@
       }
     }
     const idle = reduceMotion ? 0 : 0.016 * Math.sin(drop.clock * 1.25) * Math.min(1, drop.clock / 4);
-    heroCord.style.height = Math.max(0, drop.y) + 'px';
-    heroSwing.style.transform = `rotate(${drop.th + idle}rad)`;
+    put(heroCord, 'height', Math.max(0, drop.y).toFixed(1) + 'px');
+    put(heroSwing, 'transform', `rotate(${(drop.th + idle).toFixed(4)}rad)`);
     return Math.min(0, drop.y);                            // offset while the card is still above the cord's end
   }
 
@@ -661,10 +669,18 @@
   const progressLine = document.querySelector('.scroll-progress');
 
   const projectShots = [...document.querySelectorAll('.tool .shot')];
+  // decorative layers for the scroll-driven reveal: a glow behind each screen, a glint and a 3-band shutter on it
+  if (!reduceMotion) projectShots.forEach(shot => {
+    const make = (cls, parent, first) => { const el = document.createElement('i'); el.className = cls; el.setAttribute('aria-hidden', 'true'); first ? parent.prepend(el) : parent.append(el); return el; };
+    make('tool-glow', shot.closest('.tool'), true);
+    make('shot-glint', shot);
+    for (let b = 0; b < 3; b++) make('shot-shutter', shot).style.top = `calc(${b} * 100% / 3)`;
+  });
   function cacheLayout() {
     maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
     shotPositions = projectShots.map(shot => {let top = 0, node = shot; while (node) {top += node.offsetTop; node = node.offsetParent;}
-      return {shot, top, height:shot.offsetHeight, imgs:[...shot.querySelectorAll('img')], color:shot.querySelector('img.color'), tool:shot.closest('.tool'), r:null};});
+      return {shot, top, height:shot.offsetHeight, imgs:[...shot.querySelectorAll('img')], color:shot.querySelector('img.color'),
+        glow:shot.closest('.tool').querySelector('.tool-glow'), glint:shot.querySelector('.shot-glint'), bars:[...shot.querySelectorAll('.shot-shutter')], r:null};});
   }
   let layoutFrame;
   const scheduleLayout = () => {cancelAnimationFrame(layoutFrame); layoutFrame = requestAnimationFrame(cacheLayout);};
@@ -675,6 +691,7 @@
     lockBadgeBox();
     if (drop.settled) { drop.y = cordRest; drop.vy = 0; }
     heroCord.style.height = Math.max(0, drop.y) + 'px';
+    lastStyle.delete(heroCord);                             // written directly above: forget the cached value
   });
   addEventListener('load', scheduleLayout);
   new ResizeObserver(scheduleLayout).observe(document.querySelector('main'));
@@ -700,25 +717,25 @@
       const ry = desk ? (fromRight ? 10 : -10) * (1 - tin) : 0;
       const ty = (120 * (1 - tin) - 46 * tout) * k;
       const sc = (.82 + .18 * tin) * (1 - .07 * tout);
-      s.shot.style.transform = `translate3d(0,${ty.toFixed(1)}px,0) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
-      s.shot.style.opacity = (Math.min(1, tin * 1.8) * (1 - .55 * tout)).toFixed(3);
-      // three bands wipe open with a slight stagger, from the left or the right
-      const w = [0, 1, 2].map(b => Math.max(0, Math.min(100, (tin * 1.55 - b * .18) * 100)));
-      const x = v => (fromRight ? 100 - v : v).toFixed(2) + '%', o = fromRight ? '100%' : '0';
-      s.shot.style.clipPath = w[2] >= 100 ? 'none'
-        : `polygon(${o} 0, ${x(w[0])} 0, ${x(w[0])} 33.34%, ${x(w[1])} 33.34%, ${x(w[1])} 66.67%, ${x(w[2])} 66.67%, ${x(w[2])} 100%, ${o} 100%)`;
+      put(s.shot, 'transform', `translate3d(0,${ty.toFixed(1)}px,0) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(4)})`);
+      put(s.shot, 'opacity', (Math.min(1, tin * 1.8) * (1 - .55 * tout)).toFixed(3));
+      // three bands of the page colour slide away with a slight stagger, from the left or the right
+      s.bars.forEach((bar, b) => {
+        const w = Math.max(0, Math.min(1, tin * 1.55 - b * .18));
+        put(bar, 'transform', `translate3d(${((fromRight ? -1 : 1) * w * 101).toFixed(2)}%,0,0)`);
+      });
       // the screen content drifts slower than its frame (window parallax) and settles from a slight zoom;
       // both vanish in focus so the full screenshot is visible, and the drift never exceeds the zoom margin
       const zoom = .12 * (1 - tin) + .05 * tout, margin = zoom / (1 + zoom) * 50;
       const drift = Math.max(-margin, Math.min(margin, -r * 4));
       const inner = zoom < 1e-4 ? 'none' : `translate3d(0,${drift.toFixed(2)}%,0) scale(${(1 + zoom).toFixed(4)})`;
-      for (const img of s.imgs) img.style.transform = inner;
+      for (const img of s.imgs) put(img, 'transform', inner);
       const focus = 1 - ss(.15, .75, Math.abs(r));
-      s.color.style.opacity = focus.toFixed(3);              // monochrome at the edges, full colour in focus
-      s.tool.style.setProperty('--focus', focus.toFixed(3)); // soft glow behind the screen
+      put(s.color, 'opacity', focus.toFixed(3));             // monochrome at the edges, full colour in focus
+      if (s.glow) put(s.glow, 'opacity', focus.toFixed(3));  // soft glow behind the screen
       const sweep = ss(.7, -.2, r);
-      s.shot.style.setProperty('--sweep', (-130 + 260 * sweep).toFixed(1) + '%');
-      s.shot.style.setProperty('--glint', (Math.sin(Math.PI * sweep) * .9).toFixed(3));
+      put(s.glint, 'transform', `translate3d(${(-130 + 260 * sweep).toFixed(1)}%,0,0)`);
+      put(s.glint, 'opacity', (Math.sin(Math.PI * sweep) * .9).toFixed(3));
     });
   }
 
@@ -727,21 +744,21 @@
     const dropOffset = scrollY < innerHeight ? dropStep(dt) : 0;
     const target = scrollP();
     current += (target - current) * (1 - Math.exp(-dt * 9));
-    progressLine.style.transform = `scaleX(${current})`;
+    put(progressLine, 'transform', `scaleX(${current.toFixed(4)})`);
 
     if (scrubShots) updateShots();
 
     // the badge rises and fades as the page scrolls past the first screen
     const k = Math.min(1, Math.max(0, scrollY / (VH * 0.7)));
-    badge.style.transform = `translateY(${dropOffset - k * VH * 0.4}px) rotate(${-k * 6}deg)`;
-    badge.style.opacity = String(1 - k);
-    badge.style.visibility = k >= 1 ? 'hidden' : 'visible';
+    put(badge, 'transform', `translateY(${(dropOffset - k * VH * 0.4).toFixed(1)}px) rotate(${(-k * 6).toFixed(2)}deg)`);
+    put(badge, 'opacity', (1 - k).toFixed(3));
+    put(badge, 'visibility', k >= 1 ? 'hidden' : 'visible');
     // ...and comes back down beside the glowing horizon at the very end
     const max = maxScroll;
     const ke = Math.min(1, Math.max(0, (scrollY - (max - VH * 0.9)) / (VH * 0.8)));
     const ee = ke * ke * (3 - 2 * ke);
-    badgeEnd.style.transform = `translateY(${-(1 - ee) * VH * 0.4}px) rotate(${(1 - ee) * 5}deg)`;
-    badgeEnd.style.opacity = String(ee);
+    put(badgeEnd, 'transform', `translateY(${(-(1 - ee) * VH * 0.4).toFixed(1)}px) rotate(${((1 - ee) * 5).toFixed(2)}deg)`);
+    put(badgeEnd, 'opacity', ee.toFixed(3));
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
