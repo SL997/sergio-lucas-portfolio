@@ -1,15 +1,15 @@
 {
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "www.sergio-lm-dias.com" }],
-      "destination": "https://sergio-lm-dias.com/:path*",
+      "destination": "https://sergio-lm-dias.com/$1",
       "permanent": true
     },
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "sergio-lucas-portfolio.vercel.app" }],
-      "destination": "https://sergio-lm-dias.com/:path*",
+      "destination": "https://sergio-lm-dias.com/$1",
       "permanent": true
     }
   ]
