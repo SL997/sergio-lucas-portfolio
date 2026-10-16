@@ -251,7 +251,8 @@
   /* ---------- badge: plain PVC card on a woven lanyard ---------- */
   .badge-wrap { position: absolute; top: 0; right: clamp(24px, 4.5vw, 96px); z-index: 3; will-change: transform, opacity; }
   .hero.wrap { max-width: none; }
-  .badge-swing { display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: swing 9s ease-in-out infinite; }
+  /* own compositor layer: the continuous sway would otherwise repaint the whole card (photo, gradients, large shadow) every frame */
+  .badge-swing { display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: swing 9s ease-in-out infinite; will-change: transform; }
   @keyframes swing { 0%, 100% { transform: rotate(-.9deg); } 50% { transform: rotate(.9deg); } }
   .lanyard { width: 24px; height: clamp(150px, 26vh, 260px); position: relative; overflow: hidden;
     background: #141416 repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); box-shadow: inset 2px 0 3px rgba(0,0,0,.6), inset -2px 0 3px rgba(0,0,0,.6); }

@@ -20,7 +20,7 @@ try {
   canvas.remove();
   throw e;
 }
-const PR_MAX = Math.min(devicePixelRatio, 1.25), PR_MIN = 0.6;
+const PR_MAX = Math.min(devicePixelRatio, 1.25), PR_MIN = isMobile ? 0.75 : 0.6;   // phones: keep the hero chip crisp on dense screens
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -968,6 +968,16 @@ function adaptQuality(dt) {
 // Full frame rate while the page moves (scroll, pointer parallax, theme fade, intro);
 // the slow ambient animation alone is drawn at ~30 fps, which halves the GPU work at rest.
 let sinceRender = 1;
+// Phone layout: the section bands are ~94% opaque and full width, so while one fills the screen the
+// scene only shows through thin gaps; it is then drawn at 20 fps to leave the GPU to the scroll.
+let bandCover = 0;
+const bandHeights = new Map();
+const bandObserver = new IntersectionObserver(entries => {
+  for (const e of entries) bandHeights.set(e.target, e.isIntersecting ? e.intersectionRect.height : 0);
+  let sum = 0; for (const h of bandHeights.values()) sum += h;
+  bandCover = sum / Math.max(1, innerHeight);
+}, { threshold: Array.from({ length: 21 }, (_, i) => i / 20) });
+document.querySelectorAll('.block.wrap').forEach(el => bandObserver.observe(el));
 const inMotion = () => Math.abs(scrollTarget - scrollSmooth) > 2e-4 || mouseS.distanceToSquared(mouse) > 1e-6
   || Math.abs(lightTarget - themePass.uniforms.uLight.value) > 1e-3 || time < 7;
 // Compile every shader up front without blocking the page (parallel compile where supported),
@@ -978,7 +988,9 @@ renderer.setAnimationLoop(() => {
   sinceRender += dt;
   const moving = inMotion();
   if (moving) adaptQuality(dt);                     // judged on the page's real frame interval
-  if ((!moving || halfRate) && sinceRender < 1 / 30 - 0.004) return;
+  const covered = lastW <= 900 && bandCover > 0.88;
+  const interval = covered ? 1 / 20 : (!moving || halfRate) ? 1 / 30 : 0;
+  if (interval && sinceRender < interval - 0.004) return;
   const step = Math.min(sinceRender, 0.1); sinceRender = 0;
   themePass.uniforms.uLight.value += (lightTarget - themePass.uniforms.uLight.value) * (1 - Math.exp(-step * 6));
   time += step * (reduceMotion ? 0.3 : 1);
