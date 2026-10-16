@@ -1,0 +1,7 @@
+# Publish only what the page uses; videos, backups and working files stay local.
+/*
+!/index.html
+!/background-scene.js
+!/img
+/img/*
+!/img/*.webp

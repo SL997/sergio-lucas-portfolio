@@ -1,0 +1,12 @@
+# Only the published site and its docs are versioned.
+# Videos, renders, backups and working files stay local (several exceed GitHub's 100 MB limit).
+/*
+!/.gitignore
+!/.vercelignore
+!/README.md
+!/index.html
+!/background-scene.js
+!/serve.mjs
+!/img
+/img/*
+!/img/*.webp

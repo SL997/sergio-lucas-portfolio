@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sergio Lucas</title>
+<meta name="description" content="Sergio Lucas, Técnico de Controles Internos (SOx e ITGC) em Belo Horizonte.">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'; } catch (e) { document.documentElement.dataset.theme = 'light'; }</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f0eb;
+    --fg: #121316;
+    --text: #3b3d43;
+    --muted: #767880;
+    --line: rgba(0,0,0,.12);
+    --role: #2a2c31;
+    --veil: 242,240,235;
+    --shot-bg: #e6e4df;
+    --shot-shadow: 0 30px 70px rgba(40,40,50,.18);
+    --glass-a: rgba(255,255,255,.9); --glass-b: rgba(252,251,248,.78); --glass-c: rgba(246,245,241,.7);
+    --band: 246,244,239; --band-a: .86; --band-b: .6; --band-line: rgba(255,255,255,.95); --band-line2: rgba(0,0,0,.06);
+    --card-bg: rgba(247,245,241,.8); --card-border: rgba(255,255,255,.75); --card-shadow: 0 30px 80px rgba(60,55,45,.12), inset 0 1px 0 rgba(255,255,255,.9);
+    --glass-border: rgba(255,255,255,.85); --glass-fg: #121316; --glass-sub: rgba(18,19,22,.62); --glass-line: rgba(0,0,0,.1); --bar: #1a1a1a;
+    --pad: clamp(20px, 5vw, 80px);
+    --label: 190px;
+    --amber: #c2610f;
+    --cyan: #1d62c9;
+    --serif: 'Inter Tight', Inter, system-ui, sans-serif;
+    --ease: cubic-bezier(.16, .84, .24, 1);
+  }
+  [data-theme="dark"] {
+    --bg: #000; --fg: #ededee; --text: #c8c8cc; --muted: #85858b; --line: rgba(255,255,255,.14); --role: #dfe1e5;
+    --veil: 0,0,0; --shot-bg: #0b0b0b; --shot-shadow: 0 30px 80px rgba(0,0,0,.7);
+    --amber: #ffb766; --cyan: #86d9ff;
+    --glass-a: rgba(58,64,80,.86); --glass-b: rgba(24,28,38,.82); --glass-c: rgba(12,14,20,.8);
+    --band: 6,9,16; --band-a: .8; --band-b: .5; --band-line: rgba(255,255,255,.16); --band-line2: rgba(255,255,255,.05);
+    --card-bg: rgba(8,10,16,.66); --card-border: rgba(255,255,255,.09); --card-shadow: 0 30px 90px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+    --glass-border: rgba(255,255,255,.28); --glass-fg: #fff; --glass-sub: rgba(255,255,255,.72); --glass-line: rgba(255,255,255,.16); --bar: #fff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: clip; }
+  body { background: var(--bg); color: var(--fg); transition: background .6s, color .6s; font: 400 17.5px/1.8 Inter, system-ui, sans-serif; letter-spacing: -.006em; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 5px; }
+  main section { scroll-margin-top: 100px; }
+  .block > div, .job > div, .tool .meta > div { min-width: 0; }
+  main p, .tool h3, .tool .kind, .tool .built { overflow-wrap: anywhere; }
+  ::selection { background: var(--amber); color: #fff; }
+
+  /* background: real-time 3D journey (background-scene.js), driven by scroll */
+  .stage { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; z-index: 0; background: var(--bg); transition: background .6s; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; }
+  .stage canvas.ready { opacity: 1; }
+  .scroll-progress { position: fixed; top: 0; left: 0; height: 2px; width: 100%; z-index: 20; pointer-events: none; background: linear-gradient(90deg, var(--cyan), #a7dfff); transform: scaleX(0); transform-origin: left; }
+  .tool { perspective: 1200px; }
+  .background-credit { position: fixed; right: 12px; bottom: 8px; z-index: 8; max-width: calc(100vw - 24px); padding: 3px 7px; border-radius: 4px; font: 10px/1.4 Inter, sans-serif; color: var(--fg); background: rgba(var(--veil),.82); text-decoration: none; }
+  .background-credit:hover { text-decoration: underline; }
+  .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(var(--veil),.88) 0%, rgba(var(--veil),.72) 38%, rgba(var(--veil),.12) 75%, rgba(var(--veil),0) 100%); }
+
+  header { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; justify-content: space-between; align-items: baseline;
+    padding: 20px var(--pad) 34px; font-size: 14px; background: linear-gradient(rgb(var(--veil)) 0%, rgba(var(--veil),.85) 55%, rgba(var(--veil),0) 100%); }
+  .theme { margin-left: 26px; display: inline-flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--line); color: var(--fg);
+    font: 500 13px Inter, sans-serif; letter-spacing: .02em; padding: 7px 13px 7px 11px; border-radius: 999px; cursor: pointer; transition: border-color .3s, color .3s; }
+  .theme:hover { border-color: var(--amber); color: var(--amber); }
+  @media (hover: none) { .theme:hover { border-color: var(--line); color: var(--fg); } }
+  .theme i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid currentColor; background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
+  header .right { display: flex; align-items: center; }
+  header .me { font-family: var(--serif); font-size: 16.5px; font-weight: 600; letter-spacing: -.02em; text-decoration: none; }
+  header nav { display: flex; gap: 22px; }
+  header nav a { text-decoration: none; color: var(--muted); font-size: 14.5px; letter-spacing: .03em; transition: color .3s; }
+  header nav a:hover { color: var(--amber); }
+  .mobile-menu { display: none; }
+
+  main { position: relative; z-index: 2; }
+  .wrap { padding: 0 var(--pad); max-width: 1240px; }
+
+  /* hero */
+  .hero { min-height: 100vh; position: relative; display: flex; align-items: flex-end; padding-bottom: 14vh; }
+  .hero h1 { font-family: var(--serif); font-size: clamp(64px, 10.2vw, 164px); font-weight: 600; letter-spacing: -.058em; line-height: .9; margin-left: -.04em; }
+  .hero h1 .w { display: inline-block; white-space: nowrap; }
+  .hero h1 .l { display: inline-block; overflow: hidden; padding-bottom: .1em; margin-bottom: -.1em; vertical-align: bottom; }
+  .hero h1 .l > span { display: inline-block; transform: translateY(105%); animation: rise 1.4s var(--ease) forwards; }
+  @keyframes rise { to { transform: none; } }
+  .hero .enter { opacity: 0; transform: translateY(18px); animation: enter 1.3s var(--ease) forwards; }
+  @keyframes enter { to { opacity: 1; transform: none; } }
+  .hero .role { margin-top: 38px; font-family: var(--serif); font-size: clamp(15.5px, 1.15vw, 17.5px); font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--role); max-width: 46em; line-height: 1.65; }
+  .hero .intro { margin-top: 30px; max-width: 54ch; color: var(--text); font-size: clamp(18.5px, 1.4vw, 21px); line-height: 1.75; }
+  .hero .avail { margin-top: 36px; font-size: 15.5px; color: var(--muted); }
+  .hero-copy { position: relative; z-index: 2; }
+  @media (min-width: 901px) { .hero-copy { width: calc(100% - 270px); } }
+  .hero-copy::before { content: ""; position: absolute; inset: -60px -80px -50px -120px; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse at 35% 55%, rgba(var(--veil),.82) 0%, rgba(var(--veil),.55) 45%, rgba(var(--veil),0) 72%); }
+  .hero .avail a { color: var(--fg); text-underline-offset: 4px; text-decoration-color: var(--amber); }
+
+  /* sections: label column + content column */
+  .block { display: grid; grid-template-columns: var(--label) minmax(0, 1fr); gap: 56px; }
+  /* sections are glass banners: dense behind the text, dissolving into the film on the right */
+  .block.wrap { position: relative; isolation: isolate; margin: 26vh 0 0; width: 100%; max-width: none;
+    grid-template-columns: var(--label) minmax(0, 860px);
+    padding: clamp(46px, 6vw, 92px) var(--pad) clamp(50px, 6.4vw, 98px);
+    background: linear-gradient(90deg, rgba(var(--band), var(--band-a)) 0%, rgba(var(--band), var(--band-a)) 30%, rgba(var(--band), var(--band-b)) 66%, rgba(var(--band), .16) 86%, rgba(var(--band), 0) 100%);
+    transition: background .6s; }
+  .block.wrap::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    -webkit-backdrop-filter: blur(16px) saturate(135%); backdrop-filter: blur(16px) saturate(135%);
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 64%, transparent 92%); mask-image: linear-gradient(90deg, #000 0%, #000 64%, transparent 92%); }
+  .block.wrap::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(90deg, var(--band-line), transparent 82%) top / 100% 1px no-repeat,
+      linear-gradient(90deg, var(--band-line2), transparent 82%) bottom / 100% 1px no-repeat; }
+  .block > .label { padding-top: 14px; }
+  .block > .label { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); padding-top: 16px; position: relative; }
+  .block > .label::after { content: ""; display: block; width: 28px; height: 1px; margin-top: 12px; background: currentColor; opacity: .7; transform: scaleX(0); transform-origin: left; transition: transform 1.2s var(--ease) .15s; }
+  .block > .label.in::after { transform: scaleX(1); }
+  .block h2 { font-family: var(--serif); font-size: clamp(34px, 3.9vw, 58px); font-weight: 600; letter-spacing: -.045em; line-height: 1.02; max-width: 16ch; }
+  .block h2 em { font-style: normal; color: var(--amber); }
+  .block p strong { font-weight: 600; color: var(--fg); }
+  .block p { color: var(--text); max-width: 58ch; }
+  .block h2 + p, .block p + p { margin-top: 26px; }
+  .block h2 + p { margin-top: 44px; }
+
+  /* experience table */
+  .jobs { max-width: 820px; }
+  .job { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 40px; padding: 40px 0; position: relative; }
+  .job::before, .rows > div::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--line); transform: scaleX(0); transform-origin: left; transition: transform 1.6s var(--ease); }
+  .job.in::before, .rows > div.in::before { transform: scaleX(1); }
+  .job .dates { font-family: "IBM Plex Mono", monospace; font-size: 14px; color: var(--amber); opacity: .85; padding-top: 3px; }
+  .job h3 { font-family: var(--serif); font-size: 24px; font-weight: 600; letter-spacing: -.03em; line-height: 1.2; }
+  .job .org { color: var(--muted); font-size: 15.5px; margin-top: 4px; }
+  .job p { margin-top: 16px; font-size: 16.5px; max-width: 56ch; }
+
+  /* tools */
+  .tools-note { font-size: 15.5px; color: var(--muted); margin-top: 20px; }
+  .tool { margin-top: 150px; max-width: 1000px; }
+  .tool:first-of-type { margin-top: 70px; }
+  .tool .shot { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--shot-bg); aspect-ratio: 16 / 10;
+    box-shadow: var(--shot-shadow); }
+  .tool .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; transition: opacity .7s ease; }
+  .tool .shot img.color { opacity: 1; }
+  .tool .meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 56px; margin-top: 34px; }
+  /* desktop: description on the left, over the denser part of the band; title on the right */
+  @media (min-width: 901px) {
+    .tool .meta { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+    .tool .meta > div:first-child { order: 2; }
+  }
+  .tool h3 { font-family: var(--serif); font-size: 30px; font-weight: 600; letter-spacing: -.04em; line-height: 1.05; }
+  .tool .kind { color: var(--amber); font-size: 12.5px; font-family: "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase; margin-top: 12px; }
+  .tool .meta p { font-size: 16.5px; color: var(--text); }
+  .tool .built { margin-top: 18px; font-size: 14px; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+
+  /* simple lists */
+  .rows { max-width: 820px; }
+  .rows div { display: flex; justify-content: space-between; gap: 24px; padding: 20px 0; font-size: 16.5px; position: relative; }
+  .rows > div > span:last-child { color: var(--muted); white-space: nowrap; font-family: "IBM Plex Mono", monospace; font-size: 14px; padding-top: 2px; }
+  .rows-title { margin: 64px 0 12px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rows-title:first-child { margin-top: 0; }
+
+  .contact { position: relative; min-height: 100vh; padding: 30vh 0 22vh; }
+  .contact .block.wrap { margin-top: 0; grid-template-columns: var(--label) minmax(0, 720px); }
+  .contact .badge-wrap { opacity: 0; right: clamp(24px, 4vw, 80px); }
+  @media (min-width: 901px) and (max-width: 1200px) {
+    .contact .badge-wrap { position: relative; right: auto; width: max-content; margin: 0 auto 60px; opacity: 1 !important; transform: none !important; }
+  }
+  .contact .big { font-size: clamp(22px, 2.2vw, 30px); }
+  .contact .big { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 38px); font-weight: 600; letter-spacing: -.04em; }
+  .contact .big a { text-underline-offset: 6px; text-decoration-thickness: 1px; text-decoration-color: var(--amber); }
+  .contact a:hover { color: var(--amber); }
+  .li { display: inline-flex; align-items: center; gap: .42em; text-decoration: none; white-space: nowrap; }
+  .li .li-text { border-bottom: 1px solid var(--amber); padding-bottom: 2px; line-height: 1.15; }
+  .li-icon { position: relative; flex: none; width: 1.6em; height: 1.6em; border-radius: .2em; background: #0a66c2; display: grid; place-items: center;
+    box-shadow: 0 8px 20px rgba(10,102,194,.35); animation: liFloat 3.2s ease-in-out infinite; }
+  .li-icon svg { width: 66%; height: 66%; fill: #fff; }
+  .li-icon::after { content: ""; position: absolute; inset: -2px; border-radius: .26em; border: 2px solid #0a66c2; opacity: 0; animation: liPing 2.6s cubic-bezier(.2,.7,.2,1) infinite; }
+  .li:hover .li-icon { animation: liJump .7s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes liFloat { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-3deg); } }
+  @keyframes liPing { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(1.7); opacity: 0; } }
+  @keyframes liJump { 0% { transform: translateY(0) rotate(0) scale(1); } 35% { transform: translateY(-10px) rotate(-12deg) scale(1.12); } 70% { transform: translateY(2px) rotate(6deg) scale(.96); } 100% { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .li-icon, .li-icon::after, .li:hover .li-icon { animation: none; } }
+  footer { position: relative; z-index: 2; padding: 24px var(--pad); color: var(--muted); font-size: 14px; }
+
+  .tool .fade {
+    --entry-angle: -7deg;
+    opacity: 0;
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+    transform: translateY(70px) perspective(1200px) rotateY(var(--entry-angle)) scale(.92);
+    transition: clip-path 1.35s var(--ease), transform 1.6s var(--ease), opacity .45s ease;
+  }
+  .tool .fade img { transform: scale(1.16); transition: transform 1.9s var(--ease), opacity .7s ease; }
+  .tool:nth-of-type(even) .fade {
+    --entry-angle: 7deg;
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  }
+  .tool .fade.in, .tool:nth-of-type(even) .fade.in {
+    opacity: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    transform: none;
+    animation: project-reveal 1.35s var(--ease) both;
+  }
+  .tool .shot::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.3) 48%, rgba(255,255,255,.08) 56%, transparent 70%);
+    transform: translateX(-130%); opacity: 0;
+  }
+  .tool .shot.in::after { animation: project-reflection 1.5s ease .25s both; }
+  @keyframes project-reveal {
+    from { clip-path: polygon(0 0, 0 0, 0 33.333%, 0 33.333%, 0 33.333%, 0 66.667%, 0 66.667%, 0 66.667%, 0 100%, 0 100%); }
+    45% { clip-path: polygon(0 0, 90% 0, 65% 33.333%, 0 33.333%, 70% 33.333%, 45% 66.667%, 0 66.667%, 50% 66.667%, 25% 100%, 0 100%); }
+    to { clip-path: polygon(0 0, 100% 0, 100% 33.333%, 0 33.333%, 100% 33.333%, 100% 66.667%, 0 66.667%, 100% 66.667%, 100% 100%, 0 100%); }
+  }
+  .tool:nth-of-type(even) .fade.in { animation-name: project-reveal-reverse; }
+  @keyframes project-reveal-reverse {
+    from { clip-path: polygon(100% 0, 100% 0, 100% 33.333%, 100% 33.333%, 100% 33.333%, 100% 66.667%, 100% 66.667%, 100% 66.667%, 100% 100%, 100% 100%); }
+    45% { clip-path: polygon(100% 0, 10% 0, 35% 33.333%, 100% 33.333%, 30% 33.333%, 55% 66.667%, 100% 66.667%, 50% 66.667%, 75% 100%, 100% 100%); }
+    to { clip-path: polygon(100% 0, 0 0, 0 33.333%, 100% 33.333%, 0 33.333%, 0 66.667%, 100% 66.667%, 0 66.667%, 0 100%, 100% 100%); }
+  }
+  @keyframes project-reflection {
+    0% { transform: translateX(-130%); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translateX(130%); opacity: 0; }
+  }
+  @media (max-width: 900px) { .tool .fade { transform: translateY(36px) scale(.96); } }
+  @media (prefers-reduced-motion: reduce) {
+    .tool .fade, .tool .fade.in, .tool:nth-of-type(even) .fade.in, .tool .fade img {
+      animation: none; transition: none; transform: none; clip-path: none; opacity: 1;
+    }
+    .tool .shot::after { display: none; }
+  }
+  .tool .meta { opacity: 0; transform: translateY(14px); transition: opacity 1s var(--ease) .45s, transform 1.2s var(--ease) .45s; }
+  .tool .meta.in { opacity: 1; transform: none; }
+  .tool .fade.in img { transform: none; }
+
+  /* scroll-scrubbed project screens: the script drives depth, band wipe, inner parallax,
+     colour focus and the glass glint from the scroll position (off with reduced motion) */
+  .tool { position: relative; }
+  .tool::before { content: ""; position: absolute; left: -7%; right: -7%; top: -5%; aspect-ratio: 16 / 10; z-index: -1; pointer-events: none;
+    opacity: var(--focus, 0); background: radial-gradient(closest-side, rgba(40,55,90,.16), rgba(40,55,90,.05) 60%, transparent); }
+  [data-theme="dark"] .tool::before { background: radial-gradient(closest-side, rgba(45,125,255,.26), rgba(95,70,255,.08) 58%, transparent); }
+  .shots-scrub .tool .fade, .shots-scrub .tool .fade.in, .shots-scrub .tool:nth-of-type(even) .fade.in {
+    transition: none; animation: none; transform-origin: 50% 80%; will-change: transform, opacity, clip-path; }
+  .shots-scrub .tool .fade img, .shots-scrub .tool .fade.in img { transition: none; will-change: transform; }
+  .shots-scrub .tool .shot.in::after { animation: none; }
+  .shots-scrub .tool .shot::after { transform: translateX(var(--sweep, -130%)); opacity: var(--glint, 0); }
+
+  /* ---------- badge: plain PVC card on a woven lanyard ---------- */
+  .badge-wrap { position: absolute; top: 0; right: clamp(24px, 4.5vw, 96px); z-index: 3; will-change: transform, opacity; }
+  .hero.wrap { max-width: none; }
+  .badge-swing { display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: swing 9s ease-in-out infinite; }
+  @keyframes swing { 0%, 100% { transform: rotate(-.9deg); } 50% { transform: rotate(.9deg); } }
+  .lanyard { width: 24px; height: clamp(150px, 26vh, 260px); position: relative; overflow: hidden;
+    background: #141416 repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); box-shadow: inset 2px 0 3px rgba(0,0,0,.6), inset -2px 0 3px rgba(0,0,0,.6); }
+  .lanyard span { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); writing-mode: vertical-rl; white-space: nowrap;
+    font-size: 8px; font-weight: 600; letter-spacing: .3em; color: rgba(255,255,255,.28); }
+  .clip { width: 30px; height: 20px; margin-top: -1px; border-radius: 3px 3px 7px 7px; position: relative;
+    background: linear-gradient(180deg, #c9c9cc, #7d7d82); box-shadow: 0 3px 6px rgba(0,0,0,.5); }
+  .clip::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 6px; height: 12px; transform: translateX(-50%); border-radius: 3px; background: #8d8d92; }
+  /* glass card */
+  .badge { margin-top: 4px; width: clamp(210px, 17vw, 250px); border-radius: 16px; position: relative; overflow: hidden; color: var(--glass-fg);
+    background: linear-gradient(150deg, var(--glass-a) 0%, var(--glass-b) 45%, var(--glass-c) 100%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 30px 70px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.08), inset 1px 0 0 rgba(255,255,255,.12); }
+  .badge::before { content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 44px; height: 7px; border-radius: 4px;
+    background: rgba(0,0,0,.45); box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.25); }
+  .badge::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+    background: linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.16) 42%, rgba(255,255,255,0) 52%); }
+  .badge .band { height: 34px; }
+  .badge .photo { position: relative; width: 58%; aspect-ratio: 3 / 4; margin: 0 auto; border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.35); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+  .badge .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
+  .badge .photo img.color { opacity: 1; }
+  .badge .who { padding: 14px 18px 16px; text-align: center; }
+  .badge .who b { display: block; font-family: var(--serif); font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .badge .who small { display: block; margin-top: 3px; font-size: 13px; color: var(--glass-sub); line-height: 1.4; }
+  .badge .foot { display: flex; justify-content: space-between; align-items: flex-end; padding: 10px 16px 14px; border-top: 1px solid var(--glass-line); }
+  .badge .bar { width: 96px; height: 20px; opacity: .75; background: repeating-linear-gradient(90deg, var(--bar) 0 1px, transparent 1px 3px, var(--bar) 3px 5px, transparent 5px 6px, var(--bar) 6px 7px, transparent 7px 10px, var(--bar) 10px 12px, transparent 12px 14px); }
+  .badge .foot span { font-size: 11px; color: var(--glass-sub); }
+  .badge .dot { position: absolute; top: 12px; right: 14px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+  /* words revealed by scroll */
+  .wm { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .12em; margin-bottom: -.12em; }
+  .text-reveal { opacity: 0; transform: translateY(18px); transition: opacity .55s ease, transform .55s ease; }
+  .text-reveal.in { opacity: 1; transform: none; }
+  .wi { display: inline-block; will-change: transform, opacity; }
+
+  @media (max-width: 900px) {
+    .wm, .wi { max-width: 100%; overflow-wrap: anywhere; }
+    .contact .block > div { min-width: 0; }
+    .rows > div > span:last-child { white-space: normal; }
+    .rows > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    header nav { display: none; }
+    .theme { margin-left: 12px; min-height: 44px; }
+    .mobile-menu { display: block; }
+    .mobile-menu summary { cursor: pointer; padding: 8px; min-height: 44px; color: var(--fg); }
+    .mobile-menu nav { position: absolute; top: 70px; left: var(--pad); right: var(--pad); padding: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shot-shadow); }
+    .mobile-menu[open] nav { display: flex; flex-direction: column; gap: 0; }
+    .mobile-menu nav a { padding: 10px; }
+    .stage::after { background: rgba(var(--veil),.7); }
+    .hero { flex-direction: column; justify-content: flex-end; align-items: flex-start; padding-top: 0; }
+    .badge-wrap { position: relative; right: auto; margin: 0 auto 8vh; }
+    .lanyard { height: 90px; }
+    .block, .job, .tool .meta, .contact .block.wrap { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .block.wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; margin: 72px 0 0; padding: 36px var(--pad) 40px; background: rgba(var(--band), .94); }
+    .block h2 { font-size: clamp(30px, 7.8vw, 40px); line-height: 1.15; max-width: 22ch; }
+    .block p { font-size: 16px; line-height: 1.75; }
+    .block h2 + p { margin-top: 28px; }
+    .block p + p { margin-top: 20px; }
+    .tool { margin-top: 64px; }
+    .tool:first-of-type { margin-top: 40px; }
+    .tool .meta { margin-top: 24px; gap: 20px; }
+    .tool h3 { font-size: 26px; line-height: 1.15; }
+    .tool .kind { letter-spacing: .06em; line-height: 1.65; }
+    .tool .built { font-size: 12.5px; line-height: 1.7; }
+    .block.wrap::before { -webkit-mask-image: none; mask-image: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .contact { padding-top: 14vh; }
+    .contact .badge-wrap { opacity: 1 !important; transform: none !important; }
+  }
+  @media (max-width: 420px) { .hero h1 { font-size: clamp(50px, 17vw, 64px); } }
+  /* phones held sideways: badge beside the copy so the name is visible on the first screen */
+  @media (max-width: 900px) and (orientation: landscape) and (max-height: 520px) {
+    .hero { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 28px; padding-top: 96px; padding-bottom: 10vh; }
+    .hero-copy { flex: 1 1 auto; min-width: 0; }
+    .hero .badge-wrap { order: 2; flex: none; align-self: flex-start; margin: 0; }
+    .hero .badge { width: 172px; }
+    .hero h1 { font-size: clamp(48px, 9vw, 84px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .text-reveal, .tool .meta { transition: none; transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .badge-swing { animation: none; } .fade, .fade img, .tool .meta { clip-path: none !important; transform: none; transition: none; opacity: 1; } .hero h1 .l > span, .hero .enter { animation: none; transform: none; opacity: 1; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<noscript><style>
+  .tool .fade, .tool .meta, .hero .enter, .hero h1 .l > span { opacity: 1; transform: none; clip-path: none; animation: none; }
+</style></noscript>
+</head>
+<body>
+
+<div class="stage">
+  <canvas id="bgScene" aria-hidden="true"></canvas>
+</div>
+<div class="scroll-progress" aria-hidden="true"></div>
+
+
+<header>
+  <a class="me" href="#topo">Sergio Lucas</a>
+  <div class="right">
+  <nav>
+    <a href="#sobre">Sobre</a>
+    <a href="#experiencia">Experiência</a>
+    <a href="#ferramentas">Projetos e soluções</a>
+    <a href="#formacao">Formação</a>
+    <a href="#contato">Contato</a>
+  </nav>
+  <details class="mobile-menu">
+    <summary aria-label="Menu de navegação">Menu</summary>
+    <nav aria-label="Navegação móvel">
+      <a href="#sobre">Sobre</a>
+      <a href="#experiencia">Experiência</a>
+      <a href="#ferramentas">Projetos e soluções</a>
+      <a href="#stack">Como trabalho</a>
+      <a href="#formacao">Formação</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </details>
+  <button class="theme" id="themeBtn" type="button"><i></i><span>Escuro</span></button>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap" id="topo">
+    <div class="badge-wrap" id="badge">
+      <div class="badge-swing">
+        <div class="lanyard"><span>SERGIO LUCAS &nbsp;·&nbsp; SERGIO LUCAS &nbsp;·&nbsp; SERGIO LUCAS</span></div>
+        <div class="clip"></div>
+        <div class="badge">
+          <span class="dot"></span>
+          <div class="band"></div>
+          <div class="photo">
+            <img src="img/sergio-mono.webp" alt="Sergio Lucas">
+            <img class="color" src="img/sergio-color.webp" alt="">
+          </div>
+          <div class="who"><b>Sergio Lucas</b><small>Controles Internos de TI<br>SOx · ITGC</small></div>
+          <div class="foot"><div class="bar"></div><span>Belo Horizonte</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-copy">
+      <h1 id="name">Sergio Lucas</h1>
+      <p class="role enter" style="animation-delay:.9s">Desenvolvimento Full Stack | IA Aplicada | Engenharia de Software | Automação | ITGC | Controles Internos | GRC</p>
+      <p class="intro enter" style="animation-delay:1.08s">Atuo na área de Controles Internos de TI, com experiência em SOx, ITGC, análise de riscos e avaliação da efetividade de controles. Além dessa atuação, também desenvolvo aplicações e automações para facilitar processos, organizar informações e apoiar atividades de TI e das áreas de negócio.</p>
+    </div>
+  </section>
+
+  <section class="block wrap" id="sobre">
+    <div class="label">Sobre</div>
+    <div>
+      <h2>Um pouco sobre <em>minha trajetória</em></h2>
+      <p>Sou profissional de Tecnologia da Informação, com experiência em ITGC, GRC, desenvolvimento de aplicações, automação de processos e controles internos de TI. Busco compreender as necessidades de quem utiliza cada solução e traduzi-las em ferramentas que facilitem o trabalho e tornem as informações mais confiáveis.</p>
+      <p>Minha trajetória inclui a atuação em Governança, Riscos e Compliance na ArcelorMittal Sistemas, seguida pela experiência como Analista de Testes no Grupo LPJ, alocado na mesma equipe da ArcelorMittal. Então em setembro de 2025, passei a atuar como Técnico de Controles Internos na ArcelorMittal Sistemas - VP de Finanças.</p>
+      <p>Essa experiência me aproximou de desafios que envolvem cruzamento de bases, validação de dados, organização de evidências e acompanhamento de prazos. A partir dessas necessidades, desenvolvo e aprimoro aplicações e automações com foco em eficiência e rastreabilidade.</p>
+      <p>Também exploro o uso de modelos de linguagem, engenharia de prompts e saídas estruturadas na prototipação de fluxos assistidos por IA. Meu foco está em combinar desenvolvimento de software, capacidade analítica e conhecimento de negócio para simplificar processos.</p>
+    </div>
+  </section>
+
+  <section class="block wrap" id="experiencia">
+    <div class="label">Experiência</div>
+    <div class="jobs">
+      <div class="job">
+        <div class="dates">Setembro de 2025 – Atual</div>
+        <div>
+          <h3>Técnico de Controles Internos</h3>
+          <div class="org">ArcelorMittal Brasil</div>
+          <p>Desenvolvo e aprimoro automações para apoiar a execução e os testes de controles SOx e ITGC, o cruzamento de informações e a consolidação de evidências.</p>
+          <p>Estruturo validações, acompanho prazos e preparo comunicações para apoiar revisões e reduzir tarefas operacionais. Também levanto requisitos com as áreas de negócio e transformo demandas em soluções tecnológicas com foco em eficiência e rastreabilidade.</p>
+        </div>
+      </div>
+      <div class="job">
+        <div class="dates">Junho de 2025 – Setembro de 2025</div>
+        <div>
+          <h3>Analista de Testes</h3>
+          <div class="org">Grupo LPJ | Alocado na ArcelorMittal</div>
+          <p>Atuei na execução de testes de controles internos, automação, validações sistêmicas e análise de evidências de conformidade, alocado na ArcelorMittal.</p>
+        </div>
+      </div>
+      <div class="job">
+        <div class="dates">Agosto de 2023 – Junho de 2025</div>
+        <div>
+          <h3>Estagiário de Governança, Riscos e Compliance</h3>
+          <div class="org">ArcelorMittal Sistemas</div>
+          <p>Participei de testes de efetividade de controles ITGC e SOx, revisões de acessos e acompanhamento de indicadores. Também iniciei a criação de automação para controles e rotinas de governança.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block wrap" id="ferramentas">
+    <div class="label">Projetos e soluções</div>
+    <div>
+      <h2>Tecnologia aplicada a <em>problemas reais.</em></h2>
+      <p>Uma seleção de aplicações e automações que nasceram de necessidades do ambiente corporativo. Projetos que combinam conhecimento de processos, regras de negócio e desenvolvimento de software para simplificar rotinas, reduzir atividades manuais e facilitar a análise de informações.</p>
+      <p class="tools-note"><i>As demonstrações utilizam dados fictícios para preservar a confidencialidade das informações corporativas.</i></p>
+
+      <article class="tool">
+        <div class="shot fade"><img src="img/uar-mono.webp" alt="Tela do UAR-SAP"><img class="color" src="img/uar-color.webp" alt=""></div>
+        <div class="meta">
+          <div><h3>UAR-SAP</h3><div class="kind">Governança de acessos | Identificação de autoaprovações</div></div>
+          <div>
+            <p>Identificar possíveis autoaprovações em acessos SAP exige cruzar bases, conferir responsáveis e considerar titulares e substitutos. A execução manual dessa análise demandava conferências repetitivas e dificultava a identificação dos casos que precisavam de regularização.</p>
+            <p>O UAR-SAP automatiza esse cruzamento e prepara e-mails personalizados com as respectivas planilhas de evidências para solicitar aprovação ou regularização. A solução reduziu o tempo de preparação das revisões, padronizou as comunicações e permitiu que a equipe concentrasse sua atenção na análise dos casos identificados.</p>
+            <div class="built">React · TypeScript · Electron</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tool">
+        <div class="shot fade"><img src="img/sod-mono.webp" alt="Tela do SoD vs AC"><img class="color" src="img/sod-color.webp" alt=""></div>
+        <div class="meta">
+          <div><h3>SoD vs. Acessos Críticos</h3><div class="kind">Segregação de funções | Análise de riscos de acesso</div></div>
+          <div>
+            <p>O cruzamento de relatórios SAP para identificar conflitos de segregação de funções (SoD) e acessos críticos envolve diferentes extrações e etapas de tratamento. A preparação manual dessas informações gerava retrabalho e dificultava a comparação entre análises.</p>
+            <p>A aplicação reconhece os cabeçalhos das extrações, consolida as informações e preserva o histórico das execuções. Sua utilização agilizou a identificação de riscos de acesso, reduziu o esforço de tratamento das bases e facilitou a consulta e a rastreabilidade dos resultados.</p>
+            <div class="built">Python · FastAPI · Pandas</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tool">
+        <div class="shot fade"><img src="img/compliance-mono.webp" alt="Tela do painel de compliance"><img class="color" src="img/compliance-color.webp" alt=""></div>
+        <div class="meta">
+          <div><h3>Painel do Programa SOx</h3><div class="kind">Gestão de controles | Visibilidade do ciclo de testes</div></div>
+          <div>
+            <p>Acompanhar o programa SOx por planilhas dispersas dificultava a visualização do andamento dos testes e exigia consolidações recorrentes para entender a situação de cada segmento, entidade e responsável.</p>
+            <p>O painel transforma essas planilhas em uma visão centralizada, com validação dos dados importados e indicadores de acompanhamento. A solução reduziu o esforço de preparação de informações e facilitou a identificação de pendências e a definição de prioridades ao longo do ciclo de testes.</p>
+            <div class="built">React · Three.js · SheetJS</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tool">
+        <div class="shot fade"><img src="img/entregas-mono.webp" alt="Tela do monitoramento de entregas"><img class="color" src="img/entregas-color.webp" alt=""></div>
+        <div class="meta">
+          <div><h3>Monitoramento de Entregas</h3><div class="kind">Gestão de prazos | Acompanhamento do ciclo SOx</div></div>
+          <div>
+            <p>Controlar prazos, entregas e revisões do ciclo SOx exige acompanhar diferentes responsáveis e identificar o que está pendente, próximo do vencimento ou em atraso. Sem uma visão consolidada, esse acompanhamento dependia de conferências e cobranças manuais.</p>
+            <p>A solução centraliza as atividades, destaca os prazos que exigem atenção e permite gerar e-mails de cobrança personalizados. Sua utilização reduziu o trabalho operacional de acompanhamento, agilizou a comunicação com as equipes e facilitou a atuação antecipada sobre pendências.</p>
+            <div class="built">JavaScript · IndexedDB</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tool" id="automacao-planilhas">
+        <div class="shot fade"><img src="img/automacao-mono.webp" alt="Interface da automação de download e consolidação de planilhas, com dados de demonstração" loading="lazy" decoding="async"><img class="color" src="img/automacao-color.webp" alt="" loading="lazy" decoding="async"></div>
+        <div class="meta">
+          <div><h3>Download e Consolidação de Planilhas</h3><div class="kind">Automação de processos | Tratamento de dados</div></div>
+          <div>
+            <p>Baixar diversas planilhas de uma plataforma corporativa, aplicar filtros e reunir os arquivos em uma única base envolvia etapas repetitivas que consumiam tempo e exigiam conferências manuais.</p>
+            <p>A ferramenta automatiza os downloads, aplica filtros por administrador e projeto e consolida os arquivos em uma base Excel com organização de colunas e acompanhamento de falhas. A automação reduziu a intervenção manual, padronizou a preparação dos dados e facilitou a identificação de extrações que precisavam ser revisadas.</p>
+            <div class="built">Python · Playwright · Pandas · PySide6</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tool">
+        <div class="shot fade"><img src="img/seguros-mono.webp" alt="Tela da carteira de seguros"><img class="color" src="img/seguros-color.webp" alt=""></div>
+        <div class="meta">
+          <div><h3>Carteira de Seguros</h3><div class="kind">Gestão de apólices | Controle de coberturas</div></div>
+          <div>
+            <p>Informações de apólices, vencimentos e coberturas distribuídas em diferentes registros dificultavam o acompanhamento da carteira e a identificação de renovações ou possíveis períodos sem cobertura.</p>
+            <p>A aplicação reúne essas informações em uma visão consolidada, organizada por seguradora e ramo, com conversão entre real e dólar e sinalização de vencimentos e possíveis lacunas de cobertura. A solução agilizou as consultas, reduziu conferências manuais e facilitou o planejamento das renovações.</p>
+            <div class="built">React · TypeScript · SheetJS</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="block wrap" id="stack">
+    <div class="label">Como trabalho</div>
+    <div>
+      <p>Na área de controles internos de TI, realizo testes de efetividade de controles ITGC no escopo SOx, analisando evidências, verificando a execução dos procedimentos e documentando os resultados. Procuro compreender o objetivo de cada controle, os riscos envolvidos e se as evidências demonstram sua efetividade.</p>
+      <p>Combino essa atuação com o desenvolvimento de aplicações e automações para apoiar os testes e simplificar rotinas, como cruzamento de bases, validação de informações, consolidação de evidências e acompanhamento de prazos. O conhecimento dos processos e das regras de negócio orienta a construção dessas soluções.</p>
+      <p>Além das demandas de controles internos, também desenvolvo ferramentas para outras necessidades das áreas de negócio. Começo pela compreensão do problema e do resultado esperado para estruturar soluções que organizem informações, reduzam tarefas manuais e apoiem decisões, com foco em validação de dados, testes e rastreabilidade.</p>
+      <p>Em IA aplicada, exploro modelos de linguagem, engenharia de prompts e saídas estruturadas para prototipar fluxos assistidos por IA, combinando capacidade analítica, desenvolvimento de software e conhecimento de negócio.</p>
+    </div>
+  </section>
+
+  <section class="block wrap" id="formacao">
+    <div class="label">Formação</div>
+    <div class="rows">
+      <p class="rows-title">Graduação</p>
+      <div><span>Ciência da Computação · Centro Universitário Una</span><span>2023 – 2027</span></div>
+      <div><span>Análise e Desenvolvimento de Sistemas · Wyden</span><span>2026 – 2027</span></div>
+      <p class="rows-title">Cursos e eventos</p>
+      <div><span>Inteligência Artificial · Asimov Academy</span><span>2024</span></div>
+      <div><span>Comunicação e Pensamento Assertivo · Escola Conquer</span><span>2024</span></div>
+      <div><span>Adapta Summit</span><span>2024</span></div>
+      <div><span>Security Leaders</span><span>2024</span></div>
+      <div><span>ISACA TALKS</span><span>2023</span></div>
+      <div><span>CultSec</span><span>2023</span></div>
+      <div><span>RoadSec</span><span>2023</span></div>
+    </div>
+  </section>
+
+  <section class="contact" id="contato">
+    <div class="badge-wrap" id="badgeEnd" aria-hidden="true">
+      <div class="badge-swing">
+        <div class="lanyard"><span>SERGIO LUCAS &nbsp;·&nbsp; SERGIO LUCAS &nbsp;·&nbsp; SERGIO LUCAS</span></div>
+        <div class="clip"></div>
+        <div class="badge">
+          <span class="dot"></span>
+          <div class="band"></div>
+          <div class="photo">
+            <img src="img/sergio-mono.webp" alt="">
+            <img class="color" src="img/sergio-color.webp" alt="">
+          </div>
+          <div class="who"><b>Sergio Lucas</b><small>Controles Internos de TI<br>SOx · ITGC</small></div>
+          <div class="foot"><div class="bar"></div><span>Belo Horizonte</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="block wrap">
+    <div class="label">Contato</div>
+      <div>
+        <p class="big"><a class="li" href="https://www.linkedin.com/in/sergio-lucas-md" target="_blank" rel="noopener" aria-label="Abrir meu perfil no LinkedIn"><span class="li-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5.6" cy="5.4" r="2"/><rect x="3.9" y="8.8" width="3.4" height="11.2" rx=".4"/><path d="M10 8.8h3.2v1.6c.5-1 1.8-1.9 3.6-1.9 3.3 0 3.9 2.1 3.9 4.9V20h-3.3v-5.6c0-1.3 0-3-1.9-3s-2.2 1.5-2.2 2.9V20H10z"/></svg></span></a></p>
+        <p style="margin-top:14px">Ou por e-mail: <a href="mailto:sergiolucasdmacedo@outlook.com.br">sergiolucasdmacedo@outlook.com.br</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="wrap">Sergio Lucas, 2026</footer>
+
+
+<script>
+(() => {
+  const badge = document.getElementById('badge');
+  const badgeEnd = document.getElementById('badgeEnd');
+
+  // scroll progress, eased; the 3D background (background-scene.js) follows the same scroll
+  let current = 0, maxScroll = 1;
+  let shotPositions = [];
+  const scrollP = () => {
+    return maxScroll > 0 ? Math.min(1, Math.max(0, scrollY / maxScroll)) : 0;
+  };
+  const themeBtn = document.getElementById('themeBtn');
+  function setTheme(theme, save) {
+    document.documentElement.dataset.theme = theme;
+    themeBtn.querySelector('span').textContent = theme === 'light' ? 'Escuro' : 'Claro';
+    themeBtn.setAttribute('aria-label', theme === 'light' ? 'Mudar para o tema escuro' : 'Mudar para o tema claro');
+    if (save) { try { localStorage.setItem('theme', theme); } catch (e) {} }
+  }
+  themeBtn.addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true));
+  const mobileMenu = document.querySelector('.mobile-menu');
+  mobileMenu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { mobileMenu.open = false; }));
+  addEventListener('keydown', event => { if (event.key === 'Escape') mobileMenu.open = false; });
+  document.addEventListener('pointerdown', event => { if (mobileMenu.open && !mobileMenu.contains(event.target)) mobileMenu.open = false; });
+  setTheme(document.documentElement.dataset.theme || 'light', false);
+
+  // hero badge: drops in from above, the lanyard snaps taut and stretches a little,
+  // then it keeps swinging like a pendulum that slowly loses energy
+  const heroSwing = badge.querySelector('.badge-swing');
+  const heroCord = badge.querySelector('.lanyard');
+  heroSwing.style.animation = 'none';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let cordRest = heroCord.getBoundingClientRect().height;
+  // the badge box keeps its resting size while the lanyard animates (no layout shift where it is in flow)
+  const lockBadgeBox = () => {
+    const cord = heroCord.style.height;                     // measure at the lanyard's resting length
+    heroCord.style.height = ''; badge.style.height = '';
+    badge.style.height = badge.offsetHeight + 'px';
+    heroCord.style.height = cord;
+  };
+  lockBadgeBox();
+  document.fonts.ready.then(lockBadgeBox);
+  const cardH = badge.querySelector('.badge').offsetHeight + 34;
+  const drop = { y: reduceMotion ? cordRest : -cardH - 40, vy: 0, th: reduceMotion ? 0 : -0.05, om: 0,
+    taut: reduceMotion, settled: reduceMotion, started: reduceMotion, wait: 0, clock: 0, acc: 0 };
+  // Start the fall only once the 3D background has drawn its first frame (shader compilation
+  // causes long frames that would make the fall stutter); never wait longer than 1.6 s.
+  const bgCanvas = document.getElementById('bgScene');
+  const STEP = 1 / 240;                                    // fixed physics step: same motion at any frame rate
+  function physics(h) {
+    // a woven strap barely stretches: free fall while slack, a short firm tug when it goes taut
+    let a = 2400;                                          // gravity (px/s²)
+    const stretch = drop.y - cordRest;
+    if (stretch > 0) {
+      a = -2600 * stretch - 56 * drop.vy;                  // stiff, well-damped strap (no bungee rebound)
+      if (!drop.taut) { drop.taut = true; drop.om += 0.22 * Math.min(1, drop.vy / 1800); }
+    }
+    drop.vy += a * h; drop.y += drop.vy * h;
+    if (drop.taut && Math.abs(stretch) < 0.4 && Math.abs(drop.vy) < 6) { drop.y = cordRest; drop.vy = 0; drop.settled = true; }
+    drop.om += (-9 * drop.th - 0.9 * drop.om) * h;         // pendulum swing, gently damped
+    drop.th += drop.om * h;
+  }
+  function dropStep(dt) {
+    if (!drop.started) {
+      drop.wait += dt;
+      if (bgCanvas?.classList.contains('ready') ? drop.wait > 0.25 : drop.wait > 1.6) drop.started = true;
+    } else if (!reduceMotion) {
+      drop.clock += dt;
+      drop.acc += dt;
+      while (drop.acc >= STEP) {
+        if (drop.settled) { drop.om += (-9 * drop.th - 0.9 * drop.om) * STEP; drop.th += drop.om * STEP; }
+        else physics(STEP);
+        drop.acc -= STEP;
+      }
+    }
+    const idle = reduceMotion ? 0 : 0.016 * Math.sin(drop.clock * 1.25) * Math.min(1, drop.clock / 4);
+    heroCord.style.height = Math.max(0, drop.y) + 'px';
+    heroSwing.style.transform = `rotate(${drop.th + idle}rad)`;
+    return Math.min(0, drop.y);                            // offset while the card is still above the cord's end
+  }
+
+  let last = performance.now();
+  const progressLine = document.querySelector('.scroll-progress');
+
+  const projectShots = [...document.querySelectorAll('.tool .shot')];
+  function cacheLayout() {
+    maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    shotPositions = projectShots.map(shot => {let top = 0, node = shot; while (node) {top += node.offsetTop; node = node.offsetParent;}
+      return {shot, top, height:shot.offsetHeight, imgs:[...shot.querySelectorAll('img')], color:shot.querySelector('img.color'), tool:shot.closest('.tool'), r:null};});
+  }
+  let layoutFrame;
+  const scheduleLayout = () => {cancelAnimationFrame(layoutFrame); layoutFrame = requestAnimationFrame(cacheLayout);};
+  addEventListener('resize', scheduleLayout);
+  addEventListener('resize', () => {
+    heroCord.style.height = '';
+    cordRest = heroCord.getBoundingClientRect().height;
+    lockBadgeBox();
+    if (drop.settled) { drop.y = cordRest; drop.vy = 0; }
+    heroCord.style.height = Math.max(0, drop.y) + 'px';
+  });
+  addEventListener('load', scheduleLayout);
+  new ResizeObserver(scheduleLayout).observe(document.querySelector('main'));
+  document.fonts.ready.then(scheduleLayout);
+  cacheLayout(); current = scrollP();
+  let VH = innerHeight, lastVW = innerWidth;
+  addEventListener('resize', () => { if (innerWidth !== lastVW || Math.abs(innerHeight - VH) > 160) { VH = innerHeight; lastVW = innerWidth; } });
+
+  // Project screens follow the (eased) scroll and reverse with it: they rise from depth tilted,
+  // open in three staggered bands, come into colour while centred, catch a glint of light and
+  // recede gently as they leave. Only values that changed are written.
+  const scrubShots = !reduceMotion;
+  if (scrubShots) document.documentElement.classList.add('shots-scrub');
+  const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  function updateShots() {
+    const sy = current * maxScroll, vh = VH, desk = innerWidth > 900, k = desk ? 1 : .45;
+    shotPositions.forEach((s, i) => {
+      const r = Math.max(-1.2, Math.min(1.2, (s.top + s.height / 2 - sy - vh / 2) / (vh / 2 + s.height / 2)));
+      if (s.r !== null && Math.abs(s.r - r) < 1e-4) return;
+      s.r = r;
+      const tin = ss(1, .22, r), tout = ss(-.3, -1, r), fromRight = i % 2 === 1;
+      const rx = (24 * (1 - tin) - 8 * tout) * k;
+      const ry = desk ? (fromRight ? 10 : -10) * (1 - tin) : 0;
+      const ty = (120 * (1 - tin) - 46 * tout) * k;
+      const sc = (.82 + .18 * tin) * (1 - .07 * tout);
+      s.shot.style.transform = `translate3d(0,${ty.toFixed(1)}px,0) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+      s.shot.style.opacity = (Math.min(1, tin * 1.8) * (1 - .55 * tout)).toFixed(3);
+      // three bands wipe open with a slight stagger, from the left or the right
+      const w = [0, 1, 2].map(b => Math.max(0, Math.min(100, (tin * 1.55 - b * .18) * 100)));
+      const x = v => (fromRight ? 100 - v : v).toFixed(2) + '%', o = fromRight ? '100%' : '0';
+      s.shot.style.clipPath = w[2] >= 100 ? 'none'
+        : `polygon(${o} 0, ${x(w[0])} 0, ${x(w[0])} 33.34%, ${x(w[1])} 33.34%, ${x(w[1])} 66.67%, ${x(w[2])} 66.67%, ${x(w[2])} 100%, ${o} 100%)`;
+      // the screen content drifts slower than its frame (window parallax) and settles from a slight zoom;
+      // both vanish in focus so the full screenshot is visible, and the drift never exceeds the zoom margin
+      const zoom = .12 * (1 - tin) + .05 * tout, margin = zoom / (1 + zoom) * 50;
+      const drift = Math.max(-margin, Math.min(margin, -r * 4));
+      const inner = zoom < 1e-4 ? 'none' : `translate3d(0,${drift.toFixed(2)}%,0) scale(${(1 + zoom).toFixed(4)})`;
+      for (const img of s.imgs) img.style.transform = inner;
+      const focus = 1 - ss(.15, .75, Math.abs(r));
+      s.color.style.opacity = focus.toFixed(3);              // monochrome at the edges, full colour in focus
+      s.tool.style.setProperty('--focus', focus.toFixed(3)); // soft glow behind the screen
+      const sweep = ss(.7, -.2, r);
+      s.shot.style.setProperty('--sweep', (-130 + 260 * sweep).toFixed(1) + '%');
+      s.shot.style.setProperty('--glint', (Math.sin(Math.PI * sweep) * .9).toFixed(3));
+    });
+  }
+
+  function tick(now) {
+    const dt = Math.min(0.05, ((now || performance.now()) - last) / 1000); last = now || performance.now();
+    const dropOffset = scrollY < innerHeight ? dropStep(dt) : 0;
+    const target = scrollP();
+    current += (target - current) * (1 - Math.exp(-dt * 9));
+    progressLine.style.transform = `scaleX(${current})`;
+
+    if (scrubShots) updateShots();
+
+    // the badge rises and fades as the page scrolls past the first screen
+    const k = Math.min(1, Math.max(0, scrollY / (VH * 0.7)));
+    badge.style.transform = `translateY(${dropOffset - k * VH * 0.4}px) rotate(${-k * 6}deg)`;
+    badge.style.opacity = String(1 - k);
+    badge.style.visibility = k >= 1 ? 'hidden' : 'visible';
+    // ...and comes back down beside the glowing horizon at the very end
+    const max = maxScroll;
+    const ke = Math.min(1, Math.max(0, (scrollY - (max - VH * 0.9)) / (VH * 0.8)));
+    const ee = ke * ke * (3 - 2 * ke);
+    badgeEnd.style.transform = `translateY(${-(1 - ee) * VH * 0.4}px) rotate(${(1 - ee) * 5}deg)`;
+    badgeEnd.style.opacity = String(ee);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+
+  // hero name: letters rise one after another
+  const nameEl = document.getElementById('name');
+  // letters rise one by one; they are grouped per word so the name only wraps between words
+  const nameText = nameEl.textContent.trim();
+  let letterIndex = 0;
+  nameEl.setAttribute('aria-label', nameText);
+  nameEl.innerHTML = nameText.split(' ').map(word => `<span class="w" aria-hidden="true">${[...word].map(ch =>
+    `<span class="l"><span style="animation-delay:${0.25 + letterIndex++ * 0.045}s">${ch}</span></span>`).join('')}</span>`).join(' ');
+
+  // Reveal complete text blocks once; avoid hundreds of per-word layers and scroll-time layout reads.
+  const textBlocks = document.querySelectorAll('.block h2, .block > div > p, .job > div, .rows-title');
+  for (const el of textBlocks) el.classList.add('text-reveal');
+  const observer = new IntersectionObserver(entries => {
+    for (const entry of entries) if (entry.isIntersecting) {
+      entry.target.classList.add('in');
+      entry.target.closest('.tool')?.querySelector('.meta')?.classList.add('in');
+      observer.unobserve(entry.target);
+    }
+  }, {rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.text-reveal, .fade, .tool .meta, .job, .rows > div, .block > .label').forEach(el => {
+    if (reduceMotion) el.classList.add('in'); else observer.observe(el);
+  });
+
+})();
+</script>
+<script type="module" src="background-scene.js"></script>
+</body>
+</html>
